@@ -6,31 +6,22 @@ require('dotenv').config()
 const provider = new ethers.providers.JsonRpcProvider("https://rpc.ankr.com/eth_goerli");
 const connectionString = process.env.ATLAS_URI || "mongodb+srv://0xtornado650:Nonunstable10$@cluster0.fmh5a0s.mongodb.net/?retryWrites=true&w=majority";
 
-let TEN_MINUTES = 40 * 60 * 1000;
-
 async function DepositCompleted() {
     const client = new MongoClient(connectionString, { useNewUrlParser: true });
     await client.connect();
     db = client.db("Cluster0");
     let collection = await db.collection("posts");
-    let query = {$and: [{completed: false}, {deposit: true}, {isclosed: false}]};
+    let query = {$and: [{completed: false}, {deposit: true}]};
     let result = await collection.find(query).limit(50)
     .toArray();
 
-    if(result.length == 0){
+    console.log("connected", result)
+
+    if(result === null){
         return;
     } else {
 
 	for (let i = 0; i < result.length; i++){
-
-		/*if (new Date().valueOf() - new Date(result[i].date).valueOf() > TEN_MINUTES) {
-			console.log("writing - skip old transactions")
-			let rit = await collection.updateOne({ txid: result[i].txid }, { $set: { isclosed: true } })
-			console.log(rit, "rit")
-			continue;
-		  }*/
-
-		  console.log("connected", result[i])
 
 		let tik1
 		const response = await fetch('https://d20-api2.dogeord.io/balances/' + result[i].multiwallet);
@@ -62,13 +53,12 @@ async function DepositCompleted() {
     db = client.db("Cluster0");
     let collection = await db.collection("posts");
     let query = {$and: [{completed: false}, {withdrawal: true}]};
-    let result = await collection.find(query).limit(50)
-    .toArray();
+    let result = await collection.findOne(query);
 
     console.log("connected1", result)
 
 	for (let i = 0; i < result.length; i++){
-    if(result.length == 0){
+    if(result === null){
         return;
     } else {
     let transloader = await provider.getTransaction(result[i].ethtxhash);
@@ -90,12 +80,10 @@ async function DepositCompleted() {
     await client.connect();
     db = client.db("Cluster0");
     let collection = await db.collection("posts");
-    let query = {$and: [{completed: true}, {deposit: true}, {bridged: false}, {isclosed: false}]};
-    let result = await collection.find(query).limit(50)
-    .toArray();
+    let query = {$and: [{completed: true}, {deposit: true}, {bridged: false}]};
+    let result = await collection.findOne(query);
 
     console.log("connected2", result)
-	let zero = "0x0000000000000000000000000000000000000000"
 
     const factoryABI =  [
 		{
@@ -634,19 +622,16 @@ async function DepositCompleted() {
 
 	for (let i = 0; i < result.length; i++){
 
-    if(result.length == 0){
+    if(result === null){
         return;
     } else {
-    let wallet = result[i].recipentwallet ? result[i].recipentwallet : zero;
-    let amount =  ethers.utils.parseEther(result[i].bridgeamount);
+    let wallet = result[i].recipentwallet;
+    let amount = result[i].bridgeamount;
     let pKey = process.env.PVKEY
     const signer = new ethers.Wallet(pKey, provider);
-    const factory = "0x9949229Bd0C3A11d78F052f22aea9D8484C02e19" 
+    const factory = "0xd4e492b97c321dc002e47a3522b9512162c0e666" 
     const factoryContract = new ethers.Contract(factory, factoryABI, signer);
     const chainId = (await provider.getNetwork()).chainId;
-
-	//console.log(factoryContract, "factoryContravt")
-	console.log(pKey, "pKey")
 
 
     const domain = {
@@ -656,7 +641,7 @@ async function DepositCompleted() {
         verifyingContract: factory
       };
 
-      let token1 = "0x2C7f17840B0C6172CEaf0928BC1070ac42a27E24"
+      let token1 = "0x19BbBf58dbc2f14D508b253a053d4f06b4b2697c"
       let txid1= result[i].txid
 
       const types = {
@@ -704,7 +689,7 @@ async function DepositCompleted() {
     const tx1 = await factoryContract.mint(token1, wallet, amount, txid1, [sig.v], [sig.r], [sig.s]);
     let receipt = await tx1.wait()
 
-    console.log(receipt, "reciept")
+    //console.log(receipt, "reciept")
 
     let tim = await collection.updateOne({txid:result[i].txid},{$set: { bridged: true }})
 
@@ -716,7 +701,7 @@ async function DepositCompleted() {
 
   }
 
-  Minter()
+  //Minter()
 
 
   setTimeout((function() {
