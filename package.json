@@ -1,0 +1,43 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "pm2 start main.js --restart-delay=10000",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint .",
+    "format": "prettier --single-quote --check .",
+    "prepare": "cd ../ && husky install server/.husky",
+    "dev": "nodemon --experimental-modules index.mjs"
+  },
+  "dependencies": {
+    "@mydogeofficial/dogecoin-js": "^0.1.2-dev.0",
+    "bitcore-lib-doge": "^10.0.21",
+    "cors": "^2.8.5",
+    "dotenv": "^8.6.0",
+    "ethers": "^5.7.2",
+    "express": "^4.18.2",
+    "express-async-errors": "^3.1.1",
+    "mongodb": "^4.13.0",
+    "node-fetch": "^2.7.0",
+    "pm2": "^5.3.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "husky": "^7.0.2",
+    "lint-staged": "^11.2.3",
+    "nodemon": "^2.0.12",
+    "prettier": "^2.4.1"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.js": [
+      "prettier --single-quote --write",
+      "eslint --fix"
+    ]
+  }
+}
