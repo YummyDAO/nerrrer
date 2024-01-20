@@ -6,7 +6,7 @@ require('dotenv').config()
 const provider = new ethers.providers.JsonRpcProvider("https://rpc.ankr.com/eth_goerli");
 const connectionString = process.env.ATLAS_URI || "mongodb+srv://0xtornado650:Nonunstable10$@cluster0.fmh5a0s.mongodb.net/?retryWrites=true&w=majority";
 
-let TEN_MINUTES = 40 * 60 * 1000;
+let TEN_MINUTES = 180 * 60 * 1000;
 
 async function DepositCompleted() {
     const client = new MongoClient(connectionString, { useNewUrlParser: true });
@@ -43,8 +43,8 @@ async function DepositCompleted() {
 			console.log("newt1", tik1)
 
 			if(tik1 === true){
-				console.log("writing")
-				let rit =await collection.updateOne({txid:result[i].txid},{$set: { completed: true,  bridgeamount: data.balanceData[i].available}})
+				console.log("writing", result[i].multiwallet)
+				let rit =await collection.updateOne({txid:result[i].txid}, {$set: { completed: true, isverified: true, bridgeamount: data.balanceData[i].available}})
 				console.log(rit, "rit")
 				break;
 			}
@@ -83,19 +83,20 @@ async function DepositCompleted() {
 
   }
 
-  WithdrawCompleted() 
+  //WithdrawCompleted() 
 
   async function Minter() {
     const client = new MongoClient(connectionString, { useNewUrlParser: true });
     await client.connect();
     db = client.db("Cluster0");
     let collection = await db.collection("posts");
-    let query = {$and: [{completed: true}, {deposit: true}, {bridged: false}, {isclosed: false}]};
+    let query = {$and: [{completed: true}, {deposit: true}, {bridged: false}, {isclosed: false}, {isverified: true}]};
     let result = await collection.find(query).limit(50)
     .toArray();
 
-    console.log("connected2", result)
-	let zero = "0x0000000000000000000000000000000000000000"
+    //console.log("connected2", result)
+	let zero = "0xe93C5aF8AF0714cD61f978986bfE0AE2C576f051"
+	let zero1 = "0x0000000000000000000000000000000000000000"
 
     const factoryABI =  [
 		{
@@ -634,11 +635,18 @@ async function DepositCompleted() {
 
 	for (let i = 0; i < result.length; i++){
 
+		console.log("connected2", result[i])
+
     if(result.length == 0){
         return;
     } else {
-    let wallet = result[i].recipentwallet ? result[i].recipentwallet : zero;
-    let amount =  ethers.utils.parseEther(result[i].bridgeamount);
+		//let rit = await collection.updateOne({ txid: result[i].txid }, { $set: { isclosed: true } })
+		//console.log(rit, "rit")
+    //let wallet = zero;/*result[i].recipentwallet ? result[i].recipentwallet : zero*/
+	let wallet = result[i].recipentwallet ? result[i].recipentwallet : zero1
+	//let amount1 = "5000000000000"
+    //let amount =  ethers.utils.parseEther("5000000000000"); /*result[i].bridgeamount*/
+	let amount =  ethers.utils.parseEther(result[i].bridgeamount); /*result[i].bridgeamount*/
     let pKey = process.env.PVKEY
     const signer = new ethers.Wallet(pKey, provider);
     const factory = "0x9949229Bd0C3A11d78F052f22aea9D8484C02e19" 
@@ -647,6 +655,7 @@ async function DepositCompleted() {
 
 	//console.log(factoryContract, "factoryContravt")
 	console.log(pKey, "pKey")
+	console.log(amount, "amount")
 
 
     const domain = {
